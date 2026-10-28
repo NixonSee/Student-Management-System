@@ -61,7 +61,7 @@ The four features below are suggested selections from the assignment. Replace Me
 | Member A | Student registration and profile management | GitHub and GitHub Actions: repository access, branch conventions, `build-push.yml`, build logs, and automated publishing. | B supplies the Dockerfile and registry settings; C consumes the successful build's image tag. |
 | Member B | Course and subject registration | Docker and Docker Hub: `Dockerfile`, `.dockerignore`, local container instructions, registry setup, and image tag agreement. | A connects image building and publishing; C checks that the same container runs on AWS. |
 | Member C | Attendance records | AWS deployment: Elastic Beanstalk environment, deployment manifest, `deploy.yml`, and verification of automatic updates. | A supplies the image tag; B helps with container startup and ports; D helps with database connectivity when needed. |
-| Member D | Examination and assessment results | Database coordination: shared model agreement, connection setup, migration approach, and sample data. | All feature owners agree shared records and relationships; C coordinates the deployed database connection. |
+| Member D | Lecturer mark submission | Database coordination: shared model agreement, connection setup, migration approach, and sample data. | All feature owners agree shared records and relationships; C coordinates the deployed database connection. |
 
 Everyone implements and manually checks their own feature, reviews another member's changes, collects contribution evidence, and understands the complete pipeline. The database lead coordinates shared changes; each feature owner still implements the data access needed by their feature.
 
