@@ -1,39 +1,71 @@
 # Student Management System DevOps Assignment
 
-We are building a simplified Student Management System for ABC University. Each of our four members owns one functional requirement. We share one application, one GitHub repository, and one CI/CD pipeline that delivers the application to AWS Elastic Beanstalk.
+We are building a simplified Student Management System for ABC University using Next.js and TypeScript. Each of our four members owns one functional requirement. We share one application, one GitHub repository, and one CI/CD pipeline that delivers a Docker image to AWS Elastic Beanstalk.
 
-**Current status:** This README describes the proposed project and working process. The application, configuration files, and pipeline must still be implemented. The feature choices and technology stack below are recommendations for the group to confirm.
+**Current stage:** The GitHub repository and Next.js starter have been initialized. This README records the proposed working process. Successful local execution, production building, database integration, and automated deployment must be verified as those steps are completed.
 
-## Technology choices
+## Technology and scope
 
-| Area | Proposed choice | Reason |
-| --- | --- | --- |
-| Application language | Python | Use one language for application logic and supporting scripts. |
-| Web framework | Django | Built-in forms, authentication, database models, and migrations suit a system that manages student records. |
-| User interface | Django templates with HTML and CSS | Keep the pages and backend in one application to simplify development and deployment. |
-| Database | PostgreSQL | Store related student, course, attendance, and result records in a relational database. |
-| Source control and automation | GitHub and GitHub Actions | Review changes through pull requests and automate building and deployment. |
-| Packaging and image storage | Docker and Docker Hub | Package the application and store a versioned image for deployment. |
-| Application hosting | AWS Elastic Beanstalk Docker environment | Run the image published by our pipeline. |
+| Area | Selection or current decision |
+| --- | --- |
+| Application language | TypeScript, as indicated by the existing TypeScript configuration. |
+| Framework and UI | Next.js with React and the App Router, using the existing `src/app` directory. |
+| Server runtime | Node.js. Agree a version supported by the Next.js version in `package.json` and use it locally, in Actions, and in Docker. |
+| Package manager | npm, matching the committed `package-lock.json`. |
+| Database | PostgreSQL is the proposed choice; the group must confirm it and select the database library or ORM before integration. |
+| Source control and automation | GitHub and GitHub Actions. |
+| Application packaging and registry | Docker and Docker Hub. |
+| Application hosting | AWS Elastic Beanstalk using its Docker platform. |
 
-Before creating the starter application, record compatible Python, Django, and PostgreSQL versions here. Use the same Python version locally, in GitHub Actions, and in the Docker image. Record the agreed Python dependencies in `requirements.txt`.
+The proposed architecture keeps the pages and server-side feature operations in one Next.js application. Database queries and credentials belong in server-side code. The database approach is not established by the default starter README.
 
-For the first pipeline demonstration, a working home page is sufficient. A cloud database can be connected when the features need it. Confirm the teaching account's permissions before choosing or provisioning its database service.
+The Vercel section in the generated starter README is generic deployment guidance. Our assignment deployment target is AWS Elastic Beanstalk. Next.js supports deployment as a Docker container, so the agreed CI/CD direction remains suitable.
 
-## Features and responsibilities
+## Run the existing starter locally
 
-Replace Member A to Member D with our names after confirming the assignments. These four features are suggested selections from the assignment brief.
+Install Git and the agreed Node.js version, clone the shared repository, and open a terminal in the repository root. Review `package.json` for the actual scripts and framework version.
 
-| Member | Individual functional requirement | Additional shared responsibility | Deliverables for the shared responsibility |
+1. Install the dependencies recorded in the lockfile:
+
+   ```powershell
+   npm ci
+   ```
+
+2. Start the development server:
+
+   ```powershell
+   npm run dev
+   ```
+
+3. Open `http://localhost:3000`.
+4. With the current `src` layout, edit `src/app/page.tsx` and confirm that the page updates.
+5. Stop the development server with Ctrl+C before checking the production application on the same port.
+
+For the standard Next.js starter scripts, check the production build and server with:
+
+```powershell
+npm run build
+npm run start
+```
+
+These instructions assume the conventional `dev`, `build`, and `start` scripts shown in the Next.js documentation. Confirm their definitions in this repository. Run the production start command only after the build succeeds. Production containers should use the agreed production startup command, rather than `npm run dev`.
+
+For the first pipeline demonstration, the starter home page is enough. Do not wait for the four functional requirements or a deployed database before proving the pipeline.
+
+## Features and group responsibilities
+
+The four features below are suggested selections from the assignment. Replace Member A to Member D with our names and confirm the selections before feature implementation.
+
+| Member | Individual functional requirement | Shared responsibility | Shared deliverables |
 | --- | --- | --- | --- |
-| Member A | Student registration and profile management | GitHub repository and GitHub Actions | Repository access, branch conventions, `build-push.yml`, build logs, and publishing integration with Member B. |
-| Member B | Course and subject registration | Docker and Docker Hub | `Dockerfile`, `.dockerignore`, local container instructions, image repository, and image tagging agreement. |
-| Member C | Attendance records | AWS deployment | Elastic Beanstalk environment, deployment configuration, `deploy.yml`, and verification of the running application. |
-| Member D | Examination and assessment results | Database coordination | Shared data model agreement, local PostgreSQL setup, connection settings, migration coordination, and sample records. |
+| Member A | Student registration and profile management | GitHub and GitHub Actions | Repository access, branch conventions, `build-push.yml`, build logs, and publishing integration with Member B. |
+| Member B | Course and subject registration | Docker and Docker Hub | `Dockerfile`, `.dockerignore`, local container instructions, registry setup, and image tag agreement. |
+| Member C | Attendance records | AWS deployment | Elastic Beanstalk environment, deployment manifest, `deploy.yml`, and verification of automatic updates. |
+| Member D | Examination and assessment results | Database coordination | Shared model agreement, connection setup, migration approach, and sample data. |
 
-Everyone develops and manually checks their own feature, reviews another member's changes, records their contribution, and learns how the complete pipeline works. The database lead coordinates shared changes; feature owners still write the models and migrations needed by their own features.
+Everyone implements and manually checks their own feature, reviews another member's changes, collects contribution evidence, and understands the complete pipeline. The database lead coordinates shared changes; each feature owner still implements the data access needed by their feature.
 
-## How a change reaches AWS
+## CI/CD workflow
 
 ```mermaid
 flowchart TD
@@ -41,186 +73,137 @@ flowchart TD
     B --> C[Open a pull request]
     C --> D[Another member reviews the change]
     D --> E[Merge into main]
-    E --> F[GitHub Actions prepares the application]
+    E --> F[GitHub Actions installs dependencies and builds the application]
     F --> G[Build Docker image]
-    G --> H[Push image to Docker Hub with commit ID tag]
-    H --> I{Build and image push successful?}
+    G --> H[Push image to Docker Hub with a commit ID tag]
+    H --> I{Build and publishing successful?}
     I -->|Yes| J[Deploy that exact image to Elastic Beanstalk]
     I -->|No| K[Fix the failure and submit another change]
-    J --> L[Open the AWS application and verify the update]
+    J --> L[Open the deployed application and verify the update]
 ```
 
-The application preparation stage installs dependencies and checks application configuration. Python applications do not need to produce a compiled executable to demonstrate an automated build. The Docker build creates our deployable application package.
+| Stage | What we configure | Completion condition |
+| --- | --- | --- |
+| Local application | npm dependencies, a working home page, and the existing Next.js scripts. | Each member can run the starter and produce a successful production build. |
+| Docker packaging | A Node.js-based Dockerfile that builds the app and starts its production server; exclude local dependencies, build output, and secrets from the build context. | The application opens successfully from a local container. |
+| Image publishing | GitHub Actions builds the application image and pushes it to Docker Hub after an accepted update to `main`. The build may run within the Dockerfile. | A successful workflow produces an image tagged with the commit ID. |
+| AWS setup | A Docker environment and a single-container deployment manifest, `Dockerrun.aws.json` v1, referencing the published image and the agreed container port. | AWS can pull the image and run the application. |
+| Automatic deployment | A deployment job or `deploy.yml` updates the AWS environment only after successful building and publishing. | A reviewed page change reaches AWS without a manual rebuild or redeployment. |
 
-If CI and CD use separate workflow files, `deploy.yml` must check the upstream run's success and deploy the image tag from that run. Completion alone does not mean success. Updating Docker Hub alone does not trigger an Elastic Beanstalk deployment; our deployment workflow performs that update.
+Use the agreed container port consistently; `3000` is a suitable starting choice for this project. Ensure the container server accepts connections on `0.0.0.0` and that the AWS manifest specifies the same port. The public AWS URL can use a different external port through the platform's proxy.
+
+If separate CI and CD workflows are used, explicitly check the upstream run's success and deploy its exact image tag. Updating an image in Docker Hub alone does not update the AWS environment. For the remote-image approach, generate a deployment bundle containing the image manifest; the image is built in CI rather than rebuilt from source on Elastic Beanstalk.
 
 ## Prepare together before working in parallel
 
-| Preparation | What we must agree or create | Ready when |
-| --- | --- | --- |
-| Feature scope | Four selected requirements, each feature's main actions, and its owner. | Each owner can describe a short demonstration of their feature. |
-| Technology and structure | Runtime versions, Django project name, feature folders, and a shared page layout. | Everyone uses the same application structure and dependency list. |
-| Runnable starter | A minimal Django application with a home page and a simple `/health/` route. Create these on a setup branch and merge them after review. | Everyone can run the starter locally. The health route returns HTTP 200 without requiring the database. |
-| Application contract | Agree the startup command, container port `8000`, dependency installation, and environment variable names. | Docker, Actions, and deployment owners can configure the same application consistently. |
-| Accounts and access | GitHub access, Docker Hub repository and visibility, AWS region, and Elastic Beanstalk permissions. | Each lead can access the service needed for their work. |
-| Shared data | Agree identifiers, relationships, shared model ownership, and sample data. | Features can refer to the same students and courses without creating duplicate definitions. |
+| Preparation | Agreement or result needed |
+| --- | --- |
+| Feature scope | Confirm four requirements, their owners, and the actions each member will demonstrate. |
+| Runnable starter | Each member can run the same home page; confirm a production build succeeds. |
+| Runtime and commands | Agree the Node.js version, npm usage, build command, production startup command, and container port. |
+| Shared data | Agree student and course identifiers, relationships, shared model ownership, and the database library or ORM. |
+| Environment settings | Agree server-side connection variable names and provide a safe `.env.example` when configuration is introduced. |
+| Service access | Confirm GitHub access, Docker Hub repository visibility and credentials, AWS region, and permitted AWS services. |
 
-The project scope alone is not sufficient for implementation. We need a runnable starter and these shared agreements. We do not need all four features to be completed first.
-
-## Work in parallel after the starter runs
+Then proceed in parallel:
 
 ```mermaid
 flowchart TD
-    A[Agree scope and technology] --> B[Create repository and runnable starter]
-    B --> C[Agree ports, commands, environment variables, and shared data]
-    C --> D[Member A configures GitHub Actions]
-    C --> E[Member B creates Docker image and Docker Hub setup]
+    A[Repository and Next.js starter initialized] --> B[Verify local execution and production build]
+    B --> C[Agree commands, ports, environment variables, and shared data]
+    C --> D[Member A prepares GitHub Actions]
+    C --> E[Member B prepares Docker and Docker Hub]
     C --> F[Member C prepares AWS deployment]
-    C --> G[Member D prepares database configuration and shared data models]
-    C --> H[All members develop their own features on branches]
+    C --> G[Member D prepares database integration]
+    C --> H[All members develop their assigned features]
     D --> I[Connect and verify the pipeline]
     E --> I
     F --> I
     G --> J[Integrate database-backed features]
     H --> J
-    I --> K[Demonstrate the deployed features]
+    I --> K[Verify the four deployed features and collect evidence]
     J --> K
 ```
 
-Parallel work still has dependencies: Actions needs a working Dockerfile before it can build an image; deployment needs a published image; database-backed features need agreed models and connection settings. The leads can prepare their files and accounts while these dependencies are being completed.
+Actions needs the Dockerfile before image building can pass; deployment needs a published image; database-backed features need agreed data structures. Account setup, draft configuration, and feature development can proceed while these dependencies are completed.
 
-| Milestone | Completion condition |
-| --- | --- |
-| Starter ready | Every member can run the same basic application. |
-| Container ready | The basic application opens successfully from a local Docker container. |
-| Publishing ready | An update to `main` produces a successful Actions run and an image tagged with the commit ID. |
-| Deployment ready | The published image runs on AWS. |
-| Automatic delivery ready | A visible page change reaches AWS after a reviewed merge, without a manual rebuild or redeployment. |
-| Features ready | All four features work together in the deployed application and each member has demonstration evidence. |
+## Repository structure
 
-## Planned repository layout
-
-This is the target structure to create, not a list of files already implemented.
+The initialized top-level structure shown by the team includes:
 
 ```text
-sms-devops/
-|-- .github/
-|   `-- workflows/
-|       |-- build-push.yml
-|       `-- deploy.yml
-|-- config/                 Django project settings and application entry points
-|-- students/               Student registration and profile feature
-|-- courses/                Course registration feature
-|-- attendance/             Attendance feature
-|-- results/                Examination results feature
-|-- templates/              Shared page templates
-|-- static/                 Shared styles and assets
-|-- docs/                   Diagrams and demonstration notes
-|-- .env.example            Variable names and safe example values
+repository/
+|-- public/
+|-- src/
+|   `-- app/
 |-- .gitignore
-|-- .dockerignore
-|-- compose.yaml            Local PostgreSQL service named db with a named data volume
-|-- Dockerfile
-|-- Dockerrun.aws.json       Generated deployment manifest for a specific image tag
-|-- manage.py
-|-- requirements.txt
-`-- README.md
+|-- AGENTS.md
+|-- README.md
+|-- eslint.config.mjs
+|-- next.config.ts
+|-- package-lock.json
+|-- package.json
+`-- tsconfig.json
 ```
 
-## Local development setup
+Add the following as their owners implement the supporting work. These are planned additions, not files already verified in the repository:
 
-**Use these instructions after the starter application, `requirements.txt`, `.env.example`, and `compose.yaml` have been created and checked. They are the target quickstart for the agreed structure.**
-
-Prerequisites are Git, the agreed Python version, and Docker Desktop running Linux containers. Clone the shared GitHub repository and open PowerShell in its root folder.
-
-1. Create a Python environment and install dependencies:
-
-   ```powershell
-   python -m venv .venv
-   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-   ```
-
-2. Copy the example configuration and fill in the local values:
-
-   ```powershell
-   Copy-Item .env.example .env
-   ```
-
-   The starter application's settings must load `.env` locally and read environment variables on AWS. Copying the file alone does not configure Django.
-
-3. Start the agreed local database service and wait until it is ready:
-
-   ```powershell
-   docker compose up -d db
-   ```
-
-4. Apply the committed migrations, check configuration, and run the application:
-
-   ```powershell
-   .\.venv\Scripts\python.exe manage.py migrate
-   .\.venv\Scripts\python.exe manage.py check
-   .\.venv\Scripts\python.exe manage.py runserver
-   ```
-
-5. Open `http://127.0.0.1:8000/`. Check the home page and the feature being developed.
-
-`runserver` is for local development. The Docker image deployed to AWS should use a production server such as Gunicorn and the agreed port, for example `gunicorn config.wsgi:application --bind 0.0.0.0:8000`. The Docker owner must also configure static file collection and serving for the deployed application.
-
-### Shared environment variable contract
-
-These are proposed names for our settings and configuration files to implement consistently.
-
-| Variable | Purpose |
+| Planned item | Purpose |
 | --- | --- |
-| `DJANGO_SECRET_KEY` | Application secret, with separate local and deployed values. |
-| `DJANGO_DEBUG` | Enable locally; disable for the deployed application. |
-| `DJANGO_ALLOWED_HOSTS` | Allowed local or deployed hostnames; settings must parse the agreed format. |
-| `DB_NAME` | PostgreSQL database name. |
-| `DB_USER` | PostgreSQL user. |
-| `DB_PASSWORD` | PostgreSQL password. |
-| `DB_HOST` | Use `127.0.0.1` when Django runs on the host and PostgreSQL is published locally; use the actual database endpoint on AWS. |
-| `DB_PORT` | PostgreSQL connection port; proposed default `5432`. |
+| `.github/workflows/build-push.yml` | Build the image and publish it after an accepted update to `main`. |
+| `.github/workflows/deploy.yml` | Deploy the successfully published image, if using a separate CD workflow. |
+| `Dockerfile` and `.dockerignore` | Build and run the application container. |
+| Deployment manifest template or generator | Produce `Dockerrun.aws.json` for the exact image tag being deployed. |
+| `.env.example` | Document agreed variables using safe placeholders. |
+| Server-only database code and migration files | Implement the agreed database approach after the group chooses its tooling. |
+| `docs/` | Store architecture diagrams and demonstration notes. |
 
-If the application later runs in the same Compose network as the `db` service, its database hostname becomes `db`. Localhost inside an application container refers to that container itself.
+Keep feature pages under the existing `src/app` structure. Agree how shared components and server-side data access are organized before creating duplicate student or course definitions.
 
-Keep `.env`, `.venv`, local database files, and credentials out of Git and the application image. Commit `.env.example` with placeholders. Docker Hub publishing credentials belong in GitHub Actions secrets. Agree the supported AWS authentication method with the teaching account administrator; temporary AWS credentials also require their session token.
+## Database and environment configuration
 
-## Database responsibilities
+The database has not been selected by the starter template. Confirm PostgreSQL and the connection library or ORM with the group before writing its setup or migration commands.
 
-- The database lead coordinates student and course identifiers, relationships, connection variables, and sample records.
-- Each feature owner creates and commits migrations for their model changes. Review changes to shared models with the affected owners before merging.
-- Do not connect to the deployed database or apply its migrations while building the Docker image. Agree a separate deployment step for applying migrations before releasing features that require them.
-- Store deployed records in a database outside the application container so replacing the application does not discard them. If permitted by the teaching account, Amazon RDS for PostgreSQL is one option; final hosting remains to be confirmed.
-- Keep the first pipeline proof independent of database availability by using the home page or health route.
+When the database owner provides `.env.example`, create local settings in the repository root with:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Next.js loads its environment files from the repository root, including when source code is under `src`. A proposed connection variable is `DATABASE_URL`; the chosen database code must read it. Database credentials must remain server-only and must not use the browser-exposed `NEXT_PUBLIC_` prefix. Tools run outside Next.js, such as some migration tools, may need their own environment loading configuration.
+
+Keep actual local environment files and credentials out of Git and the Docker image. Ensure `.env.example` is allowed by `.gitignore` so its safe placeholders can be committed. Configure cloud values through the deployment environment. Docker Hub publishing credentials belong in GitHub Actions secrets; use an AWS authentication method supported by the teaching account.
+
+The database lead coordinates relationships, connection settings, and migrations. Feature owners implement their own data operations and review shared schema changes together. Agree a controlled deployment step for applying migrations; do not apply deployed database migrations during image building. Keep the initial home page and health route independent of database availability so the first pipeline proof stays simple.
+
+If the deployed features need persistent records, use a database outside the application container. Confirm the teaching account's database permissions before provisioning a service; Amazon RDS for PostgreSQL is one possible option. Database hosting remains a group decision.
 
 ## Development and review process
 
 1. Update the local `main` branch before starting a feature branch.
-2. Use clear branch names such as `feature/student-profile`, `feature/course-registration`, `setup/docker`, or `setup/github-actions`.
+2. Use clear branches such as `feature/student-profile`, `feature/attendance`, `setup/docker`, or `setup/github-actions`.
 3. Make a small change and check it locally. For a feature, manually check normal use, invalid input, and relevant database behaviour.
 4. Commit with a clear message and push the branch.
-5. Open a pull request explaining the change, how it was checked, and any migration or configuration changes.
-6. Ask another member to review it, resolve comments, and merge accepted changes into `main`.
-7. Check the resulting pipeline and deployed application. Record the commit ID and useful evidence.
+5. Open a pull request describing the change, how it was checked, and any new configuration or migrations.
+6. Another member reviews the change; resolve comments before merging.
+7. Check the workflow and the deployed application after the merge. Record the commit ID and useful evidence.
 
-Only accepted changes on `main` should publish the shared deployment image and update AWS. If pull-request checks are added, keep them to checks/builds without publishing or deploying.
+Publish the shared image and deploy only accepted updates to `main`. If pull-request checks are introduced, run checks or builds without publishing or deploying. Confirm the lint script in `package.json` before documenting or adding a lint command.
 
-## Assignment evidence and next phase
+## Assignment evidence and later design work
 
-For Part 1, each member prepares their own 8-10 minute video covering their selected functional requirement, implementation explanation, contribution evidence, and its journey through the shared pipeline. Collect commits, pull requests, Actions logs, Docker Hub image tags, AWS deployment status, and the running feature.
+For Part 1, each member prepares an individual 8-10 minute video demonstrating their functional requirement, explaining its implementation, and showing contribution evidence and the shared deployment process. Collect commits, pull requests, Actions logs, image tags, AWS deployment status, and the working feature.
 
-The lecturer clarification recorded in our workflow notes says automated testing in GitHub Actions is not required for Part 1. We still manually verify the application. Database deployment is supporting work when needed by the selected features.
+The lecturer clarification recorded in our workflow notes says automated tests in GitHub Actions are not required for Part 1. We still manually verify the application. Keep database work proportionate to the selected features.
 
-Part 2 is design and documentation with no coding required. Propose and justify the revised pipeline, automated testing, quality and security checks, staging, controlled production deployment, infrastructure as code, monitoring, logging, and rollback. Produce the overall DevOps, CI/CD, Docker, cloud, and monitoring diagrams and evaluate benefits, challenges, cost, security, scalability, reliability, and maintainability. Include references and the required GenAI declaration.
+Part 2 is design and documentation with no coding required. Propose and justify automated testing, quality and security checks, staging, controlled production deployment, infrastructure as code, monitoring, logging, and rollback. Produce the required architecture diagrams and evaluate benefits, challenges, costs, security, scalability, reliability, and maintainability. Complete references and the required GenAI declaration.
 
-## Reference material
+## References
 
 - Course assignment brief: `CT142-3-3-DevOps-Assignment.docx`.
 - Group workflow notes following lecturer discussion: `DevOps Workflow.md`.
-- [Django getting started](https://www.djangoproject.com/start/).
-- [Django deployment checklist](https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/).
-- [Dockerfile overview](https://docs.docker.com/build/concepts/dockerfile/).
+- [Next.js deployment options and production commands](https://nextjs.org/docs/app/getting-started/deploying).
+- [Next.js environment variables](https://nextjs.org/docs/app/guides/environment-variables).
 - [GitHub Actions workflows](https://docs.github.com/en/actions/concepts/workflows-and-actions/workflows).
 - [Triggering a workflow after another workflow](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run).
-- [Docker image deployment on Elastic Beanstalk](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/single-container-docker-configuration.html).
-- [Using Elastic Beanstalk with Amazon RDS](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/AWSHowTo.RDS.html).
+- [Preparing Docker images for Elastic Beanstalk](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/single-container-docker-configuration.html).
