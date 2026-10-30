@@ -1,0 +1,133 @@
+name: Student-Management-System Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DOCKER_IMAGE: nixonsee/student-management-system
+  AWS_REGION: ap-southeast-1
+  EB_APPLICATION_NAME: student-management-system
+  EB_ENVIRONMENT_NAME: student-management-system-env
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Get source code from GitHub
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+
+      # 3. Install Next.js dependencies
+      - name: Install dependencies
+        run: npm ci
+
+
+      # 4. Build Next.js
+      - name: Build Next.js application
+        run: npm run build
+
+
+      # 5. Login to Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }} # Docker Hub username get from GitHub secrets
+          password: ${{ secrets.DOCKERHUB_TOKEN }} # Docker Hub token get from GitHub secrets
+
+
+      # 6. Setup Docker Buildx
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+
+      # 7. Build Docker image and push to Docker Hub
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:latest
+            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          # Uses two tags so you know which version is deployed to Elastic Beanstalk.
+
+
+      # 8. Authenticate GitHub Actions with AWS
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+
+      # 9. Create Elastic Beanstalk deployment configuration
+      # Basically go to Docker Hub, pull this Docker image, and run it on port 3000.
+      - name: Create Dockerrun.aws.json
+        run: |
+          cat > Dockerrun.aws.json <<EOF
+          {
+            "AWSEBDockerrunVersion": "1",
+            "Image": {
+              "Name": "${{ env.DOCKER_IMAGE }}:${{ github.sha }}",
+              "Update": "true"
+            },
+            "Ports": [
+              {
+                "ContainerPort": "3000"
+              }
+            ]
+          }
+          EOF
+
+
+      # 10. Package deployment file
+      - name: Create deployment package
+        run: zip deploy.zip Dockerrun.aws.json
+
+
+      # 11. Upload deployment package to AWS S3
+      - name: Upload deployment package
+        run: |
+          BUCKET=$(aws elasticbeanstalk create-storage-location \
+            --query S3Bucket \
+            --output text)
+
+          aws s3 cp deploy.zip \
+            s3://$BUCKET/student-management-system-${{ github.sha }}.zip
+
+          echo "EB_BUCKET=$BUCKET" >> $GITHUB_ENV
+
+
+      # 12. Create new Elastic Beanstalk application version
+      - name: Create Elastic Beanstalk version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name "${{ env.EB_APPLICATION_NAME }}" \
+            --version-label "${{ github.sha }}" \
+            --source-bundle \
+            S3Bucket="${{ env.EB_BUCKET }}",S3Key="student-management-system-${{ github.sha }}.zip"
+
+
+      # 13. Deploy new version to Elastic Beanstalk
+      - name: Deploy to Elastic Beanstalk
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name "${{ env.EB_ENVIRONMENT_NAME }}" \
+            --version-label "${{ github.sha }}"
